@@ -8,14 +8,13 @@ namespace ok_project {
             var host = CreateHostBuilder(args).Build();
             host.Services.GetRequiredService<Program>().Run();
         }
-
         public void Run() {
             var Generator = GraphGenerator.Instance;
-
-            Graph test = Generator.GenerateGraph();
-            foreach(Tuple<long, long> vertex in test.EdgeList.Keys) {
-                foreach(var edge in test.EdgeList[vertex]) {
-                    Console.WriteLine("Vertex ({0}, {1}): ({2}, {3}), {4}, {5}", vertex.Item1, vertex.Item2, edge.Key.Item1, edge.Key.Item2, edge.Value.Item1, edge.Value.Item2);
+            var test = Generator.GenerateGraph(10, 100);
+            foreach(var vertex in test.VertexList) {
+                Console.Write("Vertex ({0}, {1}): \n", vertex.Key.Item1, vertex.Key.Item2);
+                foreach(var edge in vertex.Value.EdgeList) {
+                    Console.Write("\t({0}, {1}) : {2}, {3}\n", edge.Key.Item1, edge.Key.Item2, edge.Value, test.VertexList[edge.Key].Visited);
                 }
             }
         }
@@ -24,6 +23,7 @@ namespace ok_project {
                 .ConfigureServices(services => {
                     services.AddTransient<Program>();
                     services.AddTransient<Graph>();
+                    services.AddTransient<GraphGenerator>();
                 });
         }
     }
