@@ -20,7 +20,7 @@ namespace ok_project {
         }
         public Vertex() {
             _visited = false;
-            _degree = new Random().Next(1, 7);
+            _degree = new Random().Next(2, 7);
             _edgeList = new Dictionary<Tuple<int, int>, int>();
         }
     }
