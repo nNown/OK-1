@@ -21,14 +21,20 @@ namespace ok_project {
                     CreateSpaceForNewEdges(ref graph, numberOfCandidatesToDeleteEdges, 0.5);
                 } else {
                     GenerateVertices(ref graph, verticesWithCapacity, maxWeight);
-                    PopulateEdges(ref graph, maxWeight);
+                    PopulateGraphWithEdges(ref graph, maxWeight);
                 }
             }
-            
+
             return graph;
         }
 
-        private void PopulateEdges(ref Graph graph, int maxWeightOfEdge) {
+        public Graph GenerateGraph(Graph graph, int maxWeight) {
+            Graph graphOnSameSpace = new Graph();
+
+            return graphOnSameSpace;
+        }
+
+        private void PopulateGraphWithEdges(ref Graph graph, int maxWeightOfEdge) {
             foreach(var vertex in graph.VertexList) {
                 foreach(var comparedVertex in graph.VertexList) {
                     if(vertex.Key == comparedVertex.Key) continue;

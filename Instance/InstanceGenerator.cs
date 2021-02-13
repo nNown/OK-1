@@ -9,67 +9,79 @@ namespace ok_project {
         }
         private static GraphGenerator _graphGenerator;
         private static Random _random;
-        public Instance RandomSolution() {
-            Instance instance = new Instance(_graphGenerator.GenerateGraph(50, 100), _graphGenerator.GenerateGraph(50, 100));
-            instance.Solution = new List<Tuple<int, int>>();
+        public List<Solution> GenerateRandomSolutions(int solutionNumber) {
+            Graph firstGraph = _graphGenerator.GenerateGraph(50, 100);
+            Graph secondGraph = _graphGenerator.GenerateGraph(50, 100);
+
+            List<Solution> solutions = new List<Solution>();
+            while(solutions.Count < solutionNumber) {
+                solutions.Add(GenerateRandomSolution(firstGraph, secondGraph));
+            }
+            return solutions;
+        }
+        private Solution GenerateRandomSolution(Graph firstGraph, Graph secondGraph) {
+            Solution solution = new Solution(firstGraph, secondGraph);
             
-            instance.Solution.Add(new List<Tuple<int, int>>(instance.FirstGraph.VertexList.Keys)[_random.Next(0, instance.FirstGraph.VertexList.Keys.Count)]);
-            int currentVertexNumber = 1, visitedUniqueVertices = 1;
-            Graph context = instance.FirstGraph;
-            Tuple<int, int> currentVertex = instance.Solution[0];
-            while(visitedUniqueVertices < instance.FirstGraph.VertexList.Count + instance.SecondGraph.VertexList.Count) {
-                if(currentVertexNumber >= 10) {
-                    if(context == instance.FirstGraph) {
-                        foreach(var vertex in instance.SecondGraph.VertexList) {
-                            if(!vertex.Value.Visited) {
-                                currentVertex = vertex.Key;
-                                currentVertexNumber = 1;
-                                context = instance.SecondGraph;
-                                break;
-                            }
-                        }
-                    } else {
-                        foreach(var vertex in instance.FirstGraph.VertexList) {
-                            if(!vertex.Value.Visited) {
-                                currentVertex = vertex.Key;
-                                currentVertexNumber = 1;
-                                context = instance.FirstGraph;
-                                break;
-                            }
-                        }
-                    }
+            int i = 0;
+            while(GetUnvisitedVertices(firstGraph).Count + GetUnvisitedVertices(secondGraph).Count > 0) {
+                if(i % 2 == 0 || GetUnvisitedVertices(secondGraph).Count < 1) {
+                    solution.SolutionPath.Add(GeneratePath(firstGraph));
+                } else if (i % 2 != 0 || GetUnvisitedVertices(firstGraph).Count < 1){
+                    solution.SolutionPath.Add(GeneratePath(secondGraph));
                 }
-
-                List<Tuple<int, int>> edges = new List<Tuple<int, int>>(context.VertexList[currentVertex].EdgeList.Keys);
-                Tuple<int, int> localOptimalVertex = edges[0];
-                bool foundUnique = false;
-                foreach(var edge in edges) {
-                    if(!context.VertexList[edge].Visited) {
-                        instance.Solution.Add(edge);
-                        currentVertexNumber += 1;
-                        visitedUniqueVertices += 1;
-                        context.VertexList[edge].Visited = true;
-                        currentVertex = edge;
-                        foundUnique = true;
-                        break;
-                    }
-
-                    if(context.VertexList[currentVertex].EdgeList[edge] < context.VertexList[currentVertex].EdgeList[localOptimalVertex]) {
-                        localOptimalVertex = edge;
-                    }
-                }
-
-                if(!foundUnique) {
-                    instance.Solution.Add(localOptimalVertex);
-                    currentVertexNumber += 1;
-                    currentVertex = localOptimalVertex;
-                    foundUnique = false;
-                }
+                i += 1;
             }
 
-            return instance;
+            return solution;
         }
+        private List<Tuple<int, int>> GeneratePath(Graph graph) {
+            List<Tuple<int, int>> generatedPath = new List<Tuple<int, int>>();
+            Tuple<int, int> choosenVertex = PickRandomVertex(GetUnvisitedVertices(graph));
+            while(generatedPath.Count < 10) {
+                generatedPath.Add(choosenVertex);
+                graph.VertexList[choosenVertex].Visited = true;
 
+                // TODO: Find better way to access first element of dictionary
+                Tuple<int, int> currentEdge = new List<Tuple<int, int>>(graph.VertexList[choosenVertex].EdgeList.Keys)[0];
+                foreach(var edge in graph.VertexList[choosenVertex].EdgeList) {
+                    if(!graph.VertexList[edge.Key].Visited) {
+                        currentEdge = edge.Key;
+                        continue;
+                    }
+
+                    if(edge.Value < graph.VertexList[choosenVertex].EdgeList[currentEdge]) {
+                        currentEdge = edge.Key;
+                    }
+                }
+
+                choosenVertex = currentEdge;
+            }
+            return generatedPath;
+        }
+        private Tuple<int, int> PickRandomVertex(List<Tuple<int, int>> vertices) {
+            // TODO: Better solution here
+            int choosenVertexIndex = _random.Next(0, vertices.Count);
+            Tuple<int, int> choosenVertex = vertices[0];
+
+            int iteration = 0;
+            foreach(var vertex in vertices) {
+                if(iteration == choosenVertexIndex) {
+                    choosenVertex = vertex;
+                }
+                iteration += 1;
+            }
+
+            return choosenVertex;
+        }
+        private List<Tuple<int, int>> GetUnvisitedVertices(Graph graph) {
+            List<Tuple<int, int>> unvisitedVertices = new List<Tuple<int, int>>();
+            foreach(var vertex in graph.VertexList) {
+                if(!vertex.Value.Visited) {
+                    unvisitedVertices.Add(vertex.Key);
+                }
+            }
+            return unvisitedVertices;
+        }
         private InstanceGenerator() {
             _graphGenerator = GraphGenerator.Instance;
             _random = new Random();
