@@ -20,7 +20,13 @@ namespace ok_project {
         }
         public Vertex() {
             _visited = false;
-            _degree = new Random().Next(2, 7);
+            _degree = new Random().Next(1, 7);
+            _edgeList = new Dictionary<Tuple<int, int>, int>();
+        }
+
+        public Vertex(int degree) {
+            _visited = false;
+            _degree = degree;
             _edgeList = new Dictionary<Tuple<int, int>, int>();
         }
     }
@@ -30,13 +36,15 @@ namespace ok_project {
             get => _vertexList;
             set => _vertexList = value;
         }
-
         public int DistanceBetweenVertices(Tuple<int, int> source, Tuple<int, int> destination) {
             return (int) Math.Floor(Math.Sqrt(Math.Pow(source.Item1 - destination.Item1, 2) + Math.Pow(source.Item2 - destination.Item2, 2)));
         }
 
         public void AddVertex(Tuple<int, int> vertex) {
             _vertexList.Add(vertex, new Vertex());
+        }
+        public void AddVertex(Tuple<int, int> vertex, int degree) {
+            _vertexList.Add(vertex, new Vertex(degree));
         }
         public void RemoveVertex(Tuple<int, int> vertex) {
             _vertexList.Remove(vertex);
