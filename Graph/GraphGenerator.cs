@@ -27,13 +27,6 @@ namespace ok_project {
 
             return graph;
         }
-
-        public Graph GenerateGraph(Graph graph, int maxWeight) {
-            Graph graphOnSameSpace = new Graph();
-
-            return graphOnSameSpace;
-        }
-
         private void PopulateGraphWithEdges(ref Graph graph, int maxWeightOfEdge) {
             foreach(var vertex in graph.VertexList) {
                 foreach(var comparedVertex in graph.VertexList) {

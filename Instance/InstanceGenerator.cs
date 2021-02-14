@@ -16,6 +16,9 @@ namespace ok_project {
             List<Solution> solutions = new List<Solution>();
             while(solutions.Count < solutionNumber) {
                 solutions.Add(GenerateRandomSolution(firstGraph, secondGraph));
+                
+                MarkVerticesAsUnvisited(ref firstGraph);
+                MarkVerticesAsUnvisited(ref secondGraph);
             }
             return solutions;
         }
@@ -103,6 +106,11 @@ namespace ok_project {
                 solutionValue += graph.VertexList[solutionSubpath[i]].EdgeList[solutionSubpath[j]];
             }
             return solutionValue;
+        }
+        private void MarkVerticesAsUnvisited(ref Graph graph) {
+            foreach(var vertex in graph.VertexList) {
+                vertex.Value.Visited = false;
+            }
         }
         private InstanceGenerator() {
             _graphGenerator = GraphGenerator.Instance;

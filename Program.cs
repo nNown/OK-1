@@ -11,7 +11,7 @@ namespace ok_project {
         }
         public void Run() {
             var Generator = InstanceGenerator.Instance;
-            List<Solution> test = Generator.GenerateRandomSolutions(1);
+            List<Solution> test = Generator.GenerateRandomSolutions(2);
             foreach(var solution in test) {
                 foreach(var path in solution.SolutionPath) {
                     foreach(var vertex in path) {
