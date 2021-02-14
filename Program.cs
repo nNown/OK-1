@@ -11,7 +11,6 @@ namespace ok_project {
         }
         public void Run() {
             var Generator = InstanceGenerator.Instance;
-            // Instance test = Generator.RandomSolution();
             List<Solution> test = Generator.GenerateRandomSolutions(1);
             foreach(var solution in test) {
                 foreach(var path in solution.SolutionPath) {
@@ -19,7 +18,9 @@ namespace ok_project {
                         Console.Write("({0}, {1}), ", vertex.Item1, vertex.Item2);
                     }
                 }
-                Console.WriteLine();
+                Console.WriteLine("\n");
+                Console.WriteLine(solution.SolutionValue);
+                Console.WriteLine("\n");
             }
             // foreach(var vertex in test.Solution) {
             //     Console.WriteLine("({0}, {1})", vertex.Item1, vertex.Item2);

@@ -23,12 +23,13 @@ namespace ok_project {
             Solution solution = new Solution(firstGraph, secondGraph);
             
             int i = 0;
+            // TODO: Reduce calls to GetUnvisitedVertices here
             while(GetUnvisitedVertices(firstGraph).Count + GetUnvisitedVertices(secondGraph).Count > 0) {
-                if(i % 2 == 0 || GetUnvisitedVertices(secondGraph).Count < 1) {
-                    solution.SolutionPath.Add(GeneratePath(firstGraph));
-                } else if (i % 2 != 0 || GetUnvisitedVertices(firstGraph).Count < 1){
-                    solution.SolutionPath.Add(GeneratePath(secondGraph));
-                }
+                Graph context = GetGraphContext(GetUnvisitedVertices(firstGraph), GetUnvisitedVertices(secondGraph), i) ? firstGraph : secondGraph;
+
+                List<Tuple<int, int>> subpath = GeneratePath(context);
+                solution.SolutionPath.Add(subpath);
+                solution.SolutionValue += ComputePathValue(context, subpath);
                 i += 1;
             }
 
@@ -49,6 +50,10 @@ namespace ok_project {
                         continue;
                     }
 
+                    if(generatedPath.Contains(edge.Key)) {
+                        continue;
+                    }
+
                     if(edge.Value < graph.VertexList[choosenVertex].EdgeList[currentEdge]) {
                         currentEdge = edge.Key;
                     }
@@ -59,7 +64,6 @@ namespace ok_project {
             return generatedPath;
         }
         private Tuple<int, int> PickRandomVertex(List<Tuple<int, int>> vertices) {
-            // TODO: Better solution here
             int choosenVertexIndex = _random.Next(0, vertices.Count);
             Tuple<int, int> choosenVertex = vertices[0];
 
@@ -81,6 +85,24 @@ namespace ok_project {
                 }
             }
             return unvisitedVertices;
+        }
+        private bool GetGraphContext(List<Tuple<int, int>> firstGraphVerticesPool, List<Tuple<int, int>> secondGraphVerticesPool, int iteration) {
+            if(firstGraphVerticesPool.Count > 0) {
+                if(iteration % 2 != 0 && secondGraphVerticesPool.Count > 0) {
+                    return false;
+                } else {
+                    return true;
+                }
+            } else {
+                return false;
+            }
+        }
+        private int ComputePathValue(Graph graph, List<Tuple<int, int>> solutionSubpath) {
+            int solutionValue = 0;
+            for(int i = 0, j = 1; i < solutionSubpath.Count - 1; i++, j++) {
+                solutionValue += graph.VertexList[solutionSubpath[i]].EdgeList[solutionSubpath[j]];
+            }
+            return solutionValue;
         }
         private InstanceGenerator() {
             _graphGenerator = GraphGenerator.Instance;
