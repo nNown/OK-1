@@ -33,7 +33,7 @@ namespace ok_project {
                     if(vertex.Key == comparedVertex.Key) continue;
 
                     if(!graph.HasEdge(vertex.Key, comparedVertex.Key)) {
-                        if(graph.DistanceBetweenVertices(vertex.Key, comparedVertex.Key) < maxWeightOfEdge) {
+                        if(Graph.DistanceBetweenVertices(vertex.Key, comparedVertex.Key) < maxWeightOfEdge) {
                             if(vertex.Value.EdgeList.Count < vertex.Value.Degree && comparedVertex.Value.EdgeList.Count < comparedVertex.Value.Degree) {
                                 graph.AddEdge(vertex.Key, comparedVertex.Key);
                             }

@@ -10,21 +10,36 @@ namespace ok_project {
             host.Services.GetRequiredService<Program>().Run();
         }
         public void Run() {
-            var Generator = InstanceGenerator.Instance;
-            List<Solution> test = Generator.GenerateRandomSolutions(2);
-            foreach(var solution in test) {
-                foreach(var path in solution.SolutionPath) {
-                    foreach(var vertex in path) {
-                        Console.Write("({0}, {1}), ", vertex.Item1, vertex.Item2);
-                    }
-                }
-                Console.WriteLine("\n");
-                Console.WriteLine(solution.SolutionValue);
-                Console.WriteLine("\n");
-            }
-            // foreach(var vertex in test.Solution) {
+            AntColony test = new AntColony(50, 100, 1, 0.5);
+            // foreach(var solution in test.ConstructedSolutions) {
+            //     foreach(var path in solution.SolutionPath) {
+            //         Console.Write("[");
+            //         foreach(var vertex in path) {
+            //             Console.Write("({0}, {1}) ", vertex.Item1, vertex.Item2);
+            //         }
+            //         Console.Write("], ");
+            //     }
+            //     Console.WriteLine();
+            // }
+            // var instanceGenerator = InstanceGenerator.Instance;
+            // var graphGenerator = GraphGenerator.Instance;
+            // Graph test = graphGenerator.GenerateGraph(50, 100);
+            // List<Tuple<int, int>> vertices = new List<Tuple<int, int>>(test.VertexList.Keys);
+            // List<Tuple<int, int>> path = Graph.PathBetweenVertices(test, vertices[0], vertices[10]);
+            // Console.WriteLine("({0}, {1}) -> ({2}, {3})", vertices[0].Item1, vertices[0].Item2, vertices[10].Item1, vertices[10].Item2);
+            // foreach(var vertex in path) {
             //     Console.WriteLine("({0}, {1})", vertex.Item1, vertex.Item2);
             // }
+
+            // Solution test = instanceGenerator.GenerateRandomSolution(graphGenerator.GenerateGraph(50, 100), graphGenerator.GenerateGraph(50, 100));
+                // foreach(var path in test.SolutionPath) {
+                //     foreach(var vertex in path) {
+                //         Console.Write("({0}, {1}), ", vertex.Item1, vertex.Item2);
+                //     }
+                // }
+                // Console.WriteLine("\n");
+                // Console.WriteLine(test.SolutionValue);
+                // Console.WriteLine("\n");
 
             // for(int i = 0; i < 100; i++) {
             //     var Generator = GraphGenerator.Instance;
@@ -47,6 +62,7 @@ namespace ok_project {
                     services.AddTransient<GraphGenerator>();
                     services.AddTransient<Solution>();
                     services.AddTransient<InstanceGenerator>();
+                    services.AddTransient<AntColony>();
                 });
         }
     }

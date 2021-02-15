@@ -36,9 +36,47 @@ namespace ok_project {
             get => _vertexList;
             set => _vertexList = value;
         }
-        public int DistanceBetweenVertices(Tuple<int, int> source, Tuple<int, int> destination) {
-            return (int) Math.Floor(Math.Sqrt(Math.Pow(source.Item1 - destination.Item1, 2) + Math.Pow(source.Item2 - destination.Item2, 2)));
+        public static int DistanceBetweenVertices(Tuple<int, int> source, Tuple<int, int> destination) {
+            return (int) Math.Ceiling(Math.Sqrt(Math.Pow(source.Item1 - destination.Item1, 2) + Math.Pow(source.Item2 - destination.Item2, 2)));
         }
+
+        public static List<Tuple<int, int>> PathBetweenVertices(Graph graph, Tuple<int, int> source, Tuple<int, int> destination) {
+            Dictionary<Tuple<int, int>, bool> visitedVertices = new Dictionary<Tuple<int, int>, bool>();
+            foreach(var vertex in graph.VertexList) {
+                visitedVertices.Add(vertex.Key, false);
+            }
+
+            Stack<Tuple<int, int>> stack = new Stack<Tuple<int, int>>();
+            List<Tuple<int, int>> path = new List<Tuple<int, int>>();
+            bool foundSolution = false;
+            DFS(graph, ref visitedVertices, source, destination, ref stack, ref path, ref foundSolution);
+            path.Reverse();
+            return path;
+        }
+
+        private static void DFS(Graph graph, ref Dictionary<Tuple<int, int>, bool> visitedVertices, Tuple<int, int> source, Tuple<int, int> destination, ref Stack<Tuple<int, int>> stack, ref List<Tuple<int, int>> path, ref bool found) {
+            if(found) return;
+            
+            stack.Push(source);
+            if(source == destination) {
+                stack.Pop();
+                path = new List<Tuple<int, int>>(stack);
+                found = true;
+                return;
+            }
+
+            visitedVertices[source] = true;
+
+            List<Tuple<int, int>> edgeList = new List<Tuple<int, int>>(graph.VertexList[source].EdgeList.Keys);
+            if(edgeList.Count > 0) {
+                for(int i = 0; i < edgeList.Count; i++) {
+                    if(visitedVertices[edgeList[i]] == false) {
+                        DFS(graph, ref visitedVertices, edgeList[i], destination, ref stack, ref path, ref found);
+                    }
+                }
+            }
+            stack.Pop();
+        } 
 
         public void AddVertex(Tuple<int, int> vertex) {
             _vertexList.Add(vertex, new Vertex());
