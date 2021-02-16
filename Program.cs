@@ -10,7 +10,7 @@ namespace ok_project {
             host.Services.GetRequiredService<Program>().Run();
         }
         public void Run() {
-            AntColony test = new AntColony(50, 100, 10, 0.5);
+            AntColony test = new AntColony(50, 100, 10000, 0.5);
             // var instanceGenerator = InstanceGenerator.Instance;
             // var graphGenerator = GraphGenerator.Instance;
             // Graph test = graphGenerator.GenerateGraph(50, 100);
