@@ -22,32 +22,26 @@ namespace ok_project {
             Solution solution = new Solution(firstGraph, secondGraph);
             
             int i = 0;
-            // TODO: Reduce calls to GetUnvisitedVertices here
             List<Tuple<int, int>> firstGraphUnvisitedVertices = GetUnvisitedVertices(firstGraph);
             List<Tuple<int, int>> secondGraphUnvisitedVertices = GetUnvisitedVertices(secondGraph);
 
-            while(firstGraphUnvisitedVertices.Count + secondGraphUnvisitedVertices.Count > 0) {
-                Graph context = GetGraphContext(firstGraphUnvisitedVertices, secondGraphUnvisitedVertices, i) ? firstGraph : secondGraph;
+            Graph context = firstGraph;
+            while(firstGraphUnvisitedVertices.Count > 0 && secondGraphUnvisitedVertices.Count > 0) {
+                List<Tuple<int, int>> subpath = GeneratePath(ref context);
+                solution.SolutionPath.Add(subpath);
+                solution.SolutionValue += ComputePathValue(context, subpath) + solution.SolutionPath.Count > 1 ? Graph.DistanceBetweenVertices(solution.SolutionPath[solution.SolutionPath.Count - 1][solution.SolutionPath[solution.SolutionPath.Count - 1].Count - 1], subpath[0]) : 0;
 
-                List<Tuple<int, int>> subpath = new List<Tuple<int, int>>();
-                if(firstGraphUnvisitedVertices.Count == 0) {
-                    subpath = GeneratePath(ref secondGraph, secondGraphUnvisitedVertices);
-                    context = secondGraph;
-
-                } else if (secondGraphUnvisitedVertices.Count == 0) {
-                    subpath = GeneratePath(ref firstGraph, firstGraphUnvisitedVertices);
-                    context = firstGraph;
-
-                } else {
-                    subpath = GeneratePath(ref context);
-                }
-                    solution.SolutionPath.Add(subpath);
-                    solution.SolutionValue += ComputePathValue(context, subpath) + Graph.DistanceBetweenVertices(solution.SolutionPath[solution.SolutionPath.Count - 1][solution.SolutionPath[solution.SolutionPath.Count - 1].Count - 1], subpath[0]);
-                Console.WriteLine("Context: {0}, Path length: {1}", GetGraphContext(firstGraphUnvisitedVertices, secondGraphUnvisitedVertices, i) ? "First Graph" : "Second Graph", subpath.Count);
-                i += 1;
                 firstGraphUnvisitedVertices = GetUnvisitedVertices(firstGraph);
                 secondGraphUnvisitedVertices = GetUnvisitedVertices(secondGraph);
+                i += 1;
+                context = GetGraphContext(firstGraphUnvisitedVertices, secondGraphUnvisitedVertices, i) ? firstGraph : secondGraph;
             }
+            List<Tuple<int, int>> contextUnvisitedVertices = GetUnvisitedVertices(context);
+            List<Tuple<int, int>> finalPath = GeneratePath(ref context, contextUnvisitedVertices);
+
+            solution.SolutionPath.Add(finalPath);
+            solution.SolutionValue += ComputePathValue(context, finalPath) + Graph.DistanceBetweenVertices(solution.SolutionPath[solution.SolutionPath.Count - 1][solution.SolutionPath[solution.SolutionPath.Count - 1].Count - 1], finalPath[0]);
+
             return solution;
         }
         private List<Tuple<int, int>> GeneratePath(ref Graph graph) {
@@ -99,12 +93,6 @@ namespace ok_project {
             graph.VertexList[choosenVertex].Visited = true;
 
             return generatedPath;
-        }
-
-        private void ConcatenatePaths(ref List<Tuple<int, int>> firstPath, List<Tuple<int, int>> secondPath) {
-            foreach(var vertex in secondPath) {
-                firstPath.Add(vertex);
-            }
         }
 
         private Tuple<int, int> PickRandomVertex(List<Tuple<int, int>> vertices) {

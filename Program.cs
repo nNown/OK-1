@@ -10,17 +10,7 @@ namespace ok_project {
             host.Services.GetRequiredService<Program>().Run();
         }
         public void Run() {
-            AntColony test = new AntColony(50, 100, 1, 0.5);
-            // foreach(var solution in test.ConstructedSolutions) {
-            //     foreach(var path in solution.SolutionPath) {
-            //         Console.Write("[");
-            //         foreach(var vertex in path) {
-            //             Console.Write("({0}, {1}) ", vertex.Item1, vertex.Item2);
-            //         }
-            //         Console.Write("], ");
-            //     }
-            //     Console.WriteLine();
-            // }
+            AntColony test = new AntColony(50, 100, 10, 0.5);
             // var instanceGenerator = InstanceGenerator.Instance;
             // var graphGenerator = GraphGenerator.Instance;
             // Graph test = graphGenerator.GenerateGraph(50, 100);
