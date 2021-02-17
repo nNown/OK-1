@@ -16,7 +16,7 @@ namespace ok_project {
         public void Optimize(int iterationsUpperBound) {
             for(int i = 0; i < iterationsUpperBound; i++) {
                 UpdatePheromones(1, 0.05);
-                GenerateSolutions(1);
+                GenerateSolutions(10);
                 Console.WriteLine(_mostOptimalSolution.SolutionValue);
             }
         }
@@ -24,6 +24,8 @@ namespace ok_project {
             _currentGeneratedSolutions = new List<Solution>();
             for(int i = 0; i < numberOfAnts; i++) {
                 _currentGeneratedSolutions.Add(GenerateSolution());
+                MarkVerticesAsUnvisited(ref _firstGraph);
+                MarkVerticesAsUnvisited(ref _secondGraph);
             }
         }
         private Solution GenerateSolution() {
@@ -33,20 +35,25 @@ namespace ok_project {
             List<Tuple<int, int>> firstGraphUnvisitedVertices = GetUnvisitedVertices(_firstGraph);
             List<Tuple<int, int>> secondGraphUnvisitedVertices = GetUnvisitedVertices(_secondGraph);
             Tuple<int, int> subpathStartingPoint = _mostOptimalSolution.SolutionPath[0][0];
+            Graph context = _firstGraph;
+            Dictionary<Tuple<int, int>, Dictionary<Tuple<int, int>, double>> pheromonesContext = _firstGraphPheromonesTable;
             while(firstGraphUnvisitedVertices.Count > 0 && secondGraphUnvisitedVertices.Count > 0) {
-                Graph context = i % 2 == 0 ? _firstGraph : _secondGraph;
-                Dictionary<Tuple<int, int>, Dictionary<Tuple<int, int>, double>> pheromonesContext = i % 2 == 0 ? _firstGraphPheromonesTable : _secondGraphPheromonesTable;
-
                 List<Tuple<int, int>> subpath = GeneratePath(ref context, subpathStartingPoint, 0.05, pheromonesContext);
                 solution.SolutionPath.Add(subpath);
                 solution.SolutionValue += ComputePathValue(context, subpath) + solution.SolutionPath.Count > 1 ? Graph.DistanceBetweenVertices(solution.SolutionPath[solution.SolutionPath.Count - 1][solution.SolutionPath[solution.SolutionPath.Count - 1].Count - 1], subpath[0]) : 0;
-                // subpathStartingPoint = SubpathStartingPoint(context, context == _firstGraph ? _secondGraph : _firstGraph, subpath[subpath.Count - 1], 1, _jumpPheromonesTable);
 
                 firstGraphUnvisitedVertices = GetUnvisitedVertices(_firstGraph);
                 secondGraphUnvisitedVertices = GetUnvisitedVertices(_secondGraph);
-                subpathStartingPoint = PickRandomVertex(context == _firstGraph ? secondGraphUnvisitedVertices : firstGraphUnvisitedVertices);
+                subpathStartingPoint = SubpathStartingPoint(context == _firstGraph ? _secondGraph : _firstGraph, subpath[subpath.Count - 1], 0.25);
                 i += 1;
+                context = i % 2 == 0 ? _firstGraph : _secondGraph;
+                pheromonesContext = i % 2 == 0 ? _firstGraphPheromonesTable : _secondGraphPheromonesTable;
             }
+            List<Tuple<int, int>> contextUnvisitedVertices = GetUnvisitedVertices(context);
+            List<Tuple<int, int>> finalPath = GeneratePath(ref context, contextUnvisitedVertices);
+            
+            solution.SolutionPath.Add(finalPath);
+            solution.SolutionValue += ComputePathValue(context, finalPath) + Graph.DistanceBetweenVertices(solution.SolutionPath[solution.SolutionPath.Count - 1][solution.SolutionPath[solution.SolutionPath.Count - 1].Count - 1], finalPath[0]);
 
             return solution;
         }
@@ -61,24 +68,46 @@ namespace ok_project {
 
                 
                 Tuple<int, int> currentEdge = PickRandomVertex(new List<Tuple<int, int>>(graph.VertexList[currentVertex].EdgeList.Keys));
-                // if(_random.NextDouble() <= chanceToUsePheromonesTable) {
-                //     Console.WriteLine("Entered pheromone");
-                //     currentEdge = GetVertexFromPheromonesTable(currentVertex, pheromonesTable);
-                //     continue;
-                // }
+                if(_random.NextDouble() <= chanceToUsePheromonesTable) {
+                    currentEdge = GetVertexFromPheromonesTable(currentVertex, pheromonesTable);
+                } else {
+                    foreach(var edge in graph.VertexList[currentVertex].EdgeList) {
+                        if(!graph.VertexList[edge.Key].Visited) {
+                            currentVertex = edge.Key;
+                            break;
+                        }
 
-                foreach(var edge in graph.VertexList[currentVertex].EdgeList) {
-                    if(!graph.VertexList[edge.Key].Visited) {
-                        currentVertex = edge.Key;
-                        break;
-                    }
-
-                    if(edge.Value < graph.VertexList[currentVertex].EdgeList[currentEdge]) {
-                        currentEdge = edge.Key;
+                        if(edge.Value < graph.VertexList[currentVertex].EdgeList[currentEdge]) {
+                            currentEdge = edge.Key;
+                        }
                     }
                 }
+
                 currentVertex = currentEdge;
             }
+
+            return generatedPath;
+        }
+
+        private List<Tuple<int, int>> GeneratePath(ref Graph graph, List<Tuple<int, int>> univisitedVertices) {
+            List<Tuple<int, int>> generatedPath = new List<Tuple<int, int>>();
+            Tuple<int, int> choosenVertex = PickRandomVertex(univisitedVertices);
+            univisitedVertices.Remove(choosenVertex);
+
+            while(univisitedVertices.Count > 0) {
+                graph.VertexList[choosenVertex].Visited = true;
+
+                Tuple<int, int> randomDestination = PickRandomVertex(univisitedVertices);
+                List<Tuple<int, int>> pathBetweenVertices = Graph.PathBetweenVertices(graph, choosenVertex, randomDestination);
+                foreach(var vertex in pathBetweenVertices) {
+                    generatedPath.Add(vertex);
+                }
+
+                choosenVertex = randomDestination;
+                univisitedVertices.Remove(choosenVertex);
+            }
+            generatedPath.Add(choosenVertex);
+            graph.VertexList[choosenVertex].Visited = true;
 
             return generatedPath;
         }
@@ -91,16 +120,12 @@ namespace ok_project {
             return solutionValue;
         }
 
-        private Tuple<int, int> SubpathStartingPoint(Graph graph, Graph secondGraph, Tuple<int, int> lastVertex, double chanceToUsePheromonesTable, Dictionary<Tuple<int, int>, Dictionary<Tuple<int, int>, double>> pheromonesTable) {
-            List<Tuple<int, int>> unvisitedVerticesFromPheromone = GetUnvisitedVertices(graph, lastVertex, pheromonesTable);
-            if(unvisitedVerticesFromPheromone.Count == 0) {
-                unvisitedVerticesFromPheromone = GetUnvisitedVertices(secondGraph);
+        private Tuple<int, int> SubpathStartingPoint(Graph graph, Tuple<int, int> pheromoneVertex, double chanceToUsePheromonesTable) {
+            Tuple<int, int> choosenVertex = PickRandomVertex(GetUnvisitedVertices(graph));
+            if(_random.NextDouble() <= chanceToUsePheromonesTable) {
+                List<Tuple<int, int>> unvisitedVertices = GetUnvisitedVertices(graph, pheromoneVertex, _jumpPheromonesTable);
+                choosenVertex = PickRandomVertex(unvisitedVertices);
             }
-            
-            Tuple<int, int> choosenVertex = PickRandomVertex(unvisitedVerticesFromPheromone);
-            // if(_random.NextDouble() <= chanceToUsePheromonesTable) {
-            //     choosenVertex = GetVertexFromPheromonesTable(lastVertex, pheromonesTable);
-            // }
             return choosenVertex;
         }
 
@@ -274,6 +299,11 @@ namespace ok_project {
                 paths.Add(solution.SolutionPath[i]);
             }
             return paths;
+        }
+        private void MarkVerticesAsUnvisited(ref Graph graph) {
+            foreach(var vertex in graph.VertexList) {
+                vertex.Value.Visited = false;
+            }
         }
         public AntColony(int graphSize, int maxWeight, int solutionsNumber, double solutionsThreshold) {
             _graphGenerator = GraphGenerator.Instance;
