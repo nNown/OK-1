@@ -13,11 +13,15 @@ namespace ok_project {
         private static InstanceGenerator _solutionGenerator;
         private static Random _random;
         private Solution _mostOptimalSolution;
-        public void Optimize(int iterationsUpperBound) {
+        public void Optimize(int iterationsUpperBound, int numberOfAnts, double vaporationRate) {
             for(int i = 0; i < iterationsUpperBound; i++) {
-                UpdatePheromones(1, 0.05);
-                GenerateSolutions(10);
-                Console.WriteLine(_mostOptimalSolution.SolutionValue);
+                UpdatePheromones(1, vaporationRate);
+                GenerateSolutions(numberOfAnts);
+                SortSolutions();
+                if(_currentGeneratedSolutions[0].SolutionValue < _mostOptimalSolution.SolutionValue) {
+                    _mostOptimalSolution = _currentGeneratedSolutions[0];
+                    Console.WriteLine(_mostOptimalSolution.SolutionValue);
+                }
             }
         }
         private void GenerateSolutions(int numberOfAnts) {
@@ -38,13 +42,13 @@ namespace ok_project {
             Graph context = _firstGraph;
             Dictionary<Tuple<int, int>, Dictionary<Tuple<int, int>, double>> pheromonesContext = _firstGraphPheromonesTable;
             while(firstGraphUnvisitedVertices.Count > 0 && secondGraphUnvisitedVertices.Count > 0) {
-                List<Tuple<int, int>> subpath = GeneratePath(ref context, subpathStartingPoint, 0.05, pheromonesContext);
+                List<Tuple<int, int>> subpath = GeneratePath(ref context, subpathStartingPoint, 0.5, pheromonesContext);
                 solution.SolutionPath.Add(subpath);
                 solution.SolutionValue += ComputePathValue(context, subpath) + solution.SolutionPath.Count > 1 ? Graph.DistanceBetweenVertices(solution.SolutionPath[solution.SolutionPath.Count - 1][solution.SolutionPath[solution.SolutionPath.Count - 1].Count - 1], subpath[0]) : 0;
 
                 firstGraphUnvisitedVertices = GetUnvisitedVertices(_firstGraph);
                 secondGraphUnvisitedVertices = GetUnvisitedVertices(_secondGraph);
-                subpathStartingPoint = SubpathStartingPoint(context == _firstGraph ? _secondGraph : _firstGraph, subpath[subpath.Count - 1], 0.25);
+                subpathStartingPoint = SubpathStartingPoint(context == _firstGraph ? _secondGraph : _firstGraph, subpath[subpath.Count - 1], 0.5);
                 i += 1;
                 context = i % 2 == 0 ? _firstGraph : _secondGraph;
                 pheromonesContext = i % 2 == 0 ? _firstGraphPheromonesTable : _secondGraphPheromonesTable;
@@ -219,15 +223,15 @@ namespace ok_project {
             AddPheromones(solutionsThreshold);
         }
         private List<Solution> GetSolutionsForPheromonesUpdate(double solutionsThreshold) {
-            _currentGeneratedSolutions.Sort(delegate(Solution x, Solution y) {
-                return x.SolutionValue.CompareTo(y.SolutionValue);
-            });
-
-            // TODO: Write other function for most optimal solution update
-            _mostOptimalSolution = _currentGeneratedSolutions[0];
+            SortSolutions();
 
             List<Solution> solutionsTakenIntoPheromonesTable = _currentGeneratedSolutions.GetRange(0, (int) Math.Ceiling(_currentGeneratedSolutions.Count * solutionsThreshold));
             return solutionsTakenIntoPheromonesTable;
+        }
+        private void SortSolutions() {
+            _currentGeneratedSolutions.Sort(delegate(Solution x, Solution y) {
+                return x.SolutionValue.CompareTo(y.SolutionValue);
+            });
         }
         private void AddPheromones(double solutionsThreshold) {
             int i = 1;
@@ -317,9 +321,9 @@ namespace ok_project {
             _secondGraphPheromonesTable = InitializePheromonesTable(_secondGraph);
             _jumpPheromonesTable = InitializePheromonesTable(_firstGraph, _secondGraph);
 
-            // Bug here
             _currentGeneratedSolutions = _solutionGenerator.GenerateRandomSolutions(_firstGraph, _secondGraph, solutionsNumber);
-            _mostOptimalSolution = new Solution(_firstGraph, _secondGraph);
+            // SortSolutions();
+            _mostOptimalSolution = _currentGeneratedSolutions[0];
             AddPheromones(0.5);
         }
     }

@@ -11,7 +11,7 @@ namespace ok_project {
         }
         public void Run() {
             AntColony test = new AntColony(50, 100, 20, 0.5);
-            test.Optimize(1);
+            test.Optimize(100, 20, 0.1);
             // var instanceGenerator = InstanceGenerator.Instance;
             // var graphGenerator = GraphGenerator.Instance;
             // Graph test = graphGenerator.GenerateGraph(50, 100);
