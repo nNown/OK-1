@@ -11,22 +11,222 @@ namespace ok_project {
         private List<Solution> _currentGeneratedSolutions;
         private static GraphGenerator _graphGenerator;
         private static InstanceGenerator _solutionGenerator;
-        public List<Solution> ConstructedSolutions {
-            get => _currentGeneratedSolutions;
+        private static Random _random;
+        private Solution _mostOptimalSolution;
+        public void Optimize(int iterationsUpperBound) {
+            for(int i = 0; i < iterationsUpperBound; i++) {
+                UpdatePheromones(1, 0.05);
+                GenerateSolutions(1);
+                Console.WriteLine(_mostOptimalSolution.SolutionValue);
+            }
         }
-        private void AddPheromones(Tuple<int, int> source, Tuple<int, int> destination, int weight, ref Dictionary<Tuple<int, int>, Dictionary<Tuple<int, int>, double>> pheromonesTable) {
+        private void GenerateSolutions(int numberOfAnts) {
+            _currentGeneratedSolutions = new List<Solution>();
+            for(int i = 0; i < numberOfAnts; i++) {
+                _currentGeneratedSolutions.Add(GenerateSolution());
+            }
+        }
+        private Solution GenerateSolution() {
+            Solution solution = new Solution(_firstGraph, _secondGraph);
+            
+            int i = 0;
+            List<Tuple<int, int>> firstGraphUnvisitedVertices = GetUnvisitedVertices(_firstGraph);
+            List<Tuple<int, int>> secondGraphUnvisitedVertices = GetUnvisitedVertices(_secondGraph);
+            Tuple<int, int> subpathStartingPoint = _mostOptimalSolution.SolutionPath[0][0];
+            while(firstGraphUnvisitedVertices.Count > 0 && secondGraphUnvisitedVertices.Count > 0) {
+                Graph context = i % 2 == 0 ? _firstGraph : _secondGraph;
+                Dictionary<Tuple<int, int>, Dictionary<Tuple<int, int>, double>> pheromonesContext = i % 2 == 0 ? _firstGraphPheromonesTable : _secondGraphPheromonesTable;
+
+                List<Tuple<int, int>> subpath = GeneratePath(ref context, subpathStartingPoint, 0.05, pheromonesContext);
+                solution.SolutionPath.Add(subpath);
+                solution.SolutionValue += ComputePathValue(context, subpath) + solution.SolutionPath.Count > 1 ? Graph.DistanceBetweenVertices(solution.SolutionPath[solution.SolutionPath.Count - 1][solution.SolutionPath[solution.SolutionPath.Count - 1].Count - 1], subpath[0]) : 0;
+                // subpathStartingPoint = SubpathStartingPoint(context, context == _firstGraph ? _secondGraph : _firstGraph, subpath[subpath.Count - 1], 1, _jumpPheromonesTable);
+
+                firstGraphUnvisitedVertices = GetUnvisitedVertices(_firstGraph);
+                secondGraphUnvisitedVertices = GetUnvisitedVertices(_secondGraph);
+                subpathStartingPoint = PickRandomVertex(context == _firstGraph ? secondGraphUnvisitedVertices : firstGraphUnvisitedVertices);
+                i += 1;
+            }
+
+            return solution;
+        }
+
+        private List<Tuple<int, int>> GeneratePath(ref Graph graph, Tuple<int, int> startingPoint, double chanceToUsePheromonesTable, Dictionary<Tuple<int, int>, Dictionary<Tuple<int, int>, double>> pheromonesTable) {
+            List<Tuple<int, int>> generatedPath = new List<Tuple<int, int>>();
+            
+            Tuple<int, int> currentVertex = startingPoint;
+            while(generatedPath.Count < 10) {
+                generatedPath.Add(currentVertex);
+                graph.VertexList[currentVertex].Visited = true;
+
+                
+                Tuple<int, int> currentEdge = PickRandomVertex(new List<Tuple<int, int>>(graph.VertexList[currentVertex].EdgeList.Keys));
+                // if(_random.NextDouble() <= chanceToUsePheromonesTable) {
+                //     Console.WriteLine("Entered pheromone");
+                //     currentEdge = GetVertexFromPheromonesTable(currentVertex, pheromonesTable);
+                //     continue;
+                // }
+
+                foreach(var edge in graph.VertexList[currentVertex].EdgeList) {
+                    if(!graph.VertexList[edge.Key].Visited) {
+                        currentVertex = edge.Key;
+                        break;
+                    }
+
+                    if(edge.Value < graph.VertexList[currentVertex].EdgeList[currentEdge]) {
+                        currentEdge = edge.Key;
+                    }
+                }
+                currentVertex = currentEdge;
+            }
+
+            return generatedPath;
+        }
+
+        public int ComputePathValue(Graph graph, List<Tuple<int, int>> solutionSubpath) {
+            int solutionValue = 0;
+            for(int i = 0, j = 1; i < solutionSubpath.Count - 1; i++, j++) {
+                solutionValue += graph.VertexList[solutionSubpath[i]].EdgeList[solutionSubpath[j]];
+            }
+            return solutionValue;
+        }
+
+        private Tuple<int, int> SubpathStartingPoint(Graph graph, Graph secondGraph, Tuple<int, int> lastVertex, double chanceToUsePheromonesTable, Dictionary<Tuple<int, int>, Dictionary<Tuple<int, int>, double>> pheromonesTable) {
+            List<Tuple<int, int>> unvisitedVerticesFromPheromone = GetUnvisitedVertices(graph, lastVertex, pheromonesTable);
+            if(unvisitedVerticesFromPheromone.Count == 0) {
+                unvisitedVerticesFromPheromone = GetUnvisitedVertices(secondGraph);
+            }
+            
+            Tuple<int, int> choosenVertex = PickRandomVertex(unvisitedVerticesFromPheromone);
+            // if(_random.NextDouble() <= chanceToUsePheromonesTable) {
+            //     choosenVertex = GetVertexFromPheromonesTable(lastVertex, pheromonesTable);
+            // }
+            return choosenVertex;
+        }
+
+
+        private Tuple<int, int> PickRandomVertex(List<Tuple<int, int>> vertices) {
+            return vertices[_random.Next(0, vertices.Count)];
+        }
+
+        private List<Tuple<int, int>> GetUnvisitedVertices(Graph graph) {
+            List<Tuple<int, int>> unvisitedVertices = new List<Tuple<int, int>>();
+
+            foreach(var vertex in graph.VertexList) {
+                if(!vertex.Value.Visited) {
+                    unvisitedVertices.Add(vertex.Key);
+                }
+            }
+
+            return unvisitedVertices;
+        }
+
+        private List<Tuple<int, int>> GetUnvisitedVertices(Graph graph, Tuple<int, int> pheromoneVertex, Dictionary<Tuple<int, int>, Dictionary<Tuple<int, int>, double>> pheromonesTable) {
+            List<Tuple<int, int>> unvisitedVertices = new List<Tuple<int, int>>();
+
+            foreach(var vertex in pheromonesTable[pheromoneVertex]) {
+                if(!graph.VertexList[vertex.Key].Visited) {
+                    unvisitedVertices.Add(vertex.Key);
+                }
+            }
+
+            return unvisitedVertices;
+        }
+
+        private Tuple<int, int> GetVertexFromPheromonesTable(Tuple<int, int> vertex, Dictionary<Tuple<int, int>, Dictionary<Tuple<int, int>, double>> pheromonesTable) {
+            List<Tuple<Tuple<int, int>, double>> chancesToPickVertex = CreateListOfChances(pheromonesTable[vertex]);
+            List<Tuple<Tuple<int, int>, double>> chancesCDF = CDF(chancesToPickVertex);
+
+            double generatedChance = _random.NextDouble();
+            return ChoosePheromone(chancesCDF, generatedChance);
+        }
+        private double SumPheromonesValues(List<double> pheromonesValues) {
+            double pheromonesSum = 0;
+
+            foreach(var pheromoneValue in pheromonesValues) {
+                pheromonesSum += pheromoneValue;
+            }
+
+            return pheromonesSum;
+        }
+
+        private List<Tuple<Tuple<int, int>, double>> CreateListOfChances(Dictionary<Tuple<int, int>, double> pheromones) {
+            double pheromonesSum = SumPheromonesValues(new List<double>(pheromones.Values));
+
+            List<Tuple<Tuple<int, int>, double>> chancesToPickVertex = new List<Tuple<Tuple<int, int>, double>>();
+            foreach(var pheromone in pheromones) {
+                chancesToPickVertex.Add(new Tuple<Tuple<int, int>, double>(pheromone.Key, pheromone.Value / pheromonesSum));
+            }
+
+            return chancesToPickVertex;
+        }
+
+        private List<Tuple<Tuple<int, int>, double>> CDF(List<Tuple<Tuple<int, int>, double>> pheromonesProbabilities) {
+            pheromonesProbabilities.Sort(delegate(Tuple<Tuple<int, int>, double> x, Tuple<Tuple<int, int>, double> y) {
+                return x.Item2.CompareTo(y.Item2);
+            });
+
+            List<Tuple<Tuple<int, int>, double>> pheromonesCDF = new List<Tuple<Tuple<int, int>, double>>();
+            pheromonesCDF.Add(pheromonesProbabilities[0]);
+            for(int i = 1; i < pheromonesProbabilities.Count; i++) {
+                pheromonesCDF.Add(new Tuple<Tuple<int, int>, double>(pheromonesProbabilities[i].Item1, pheromonesProbabilities[i].Item2 + pheromonesProbabilities[i - 1].Item2));
+            }
+
+            return pheromonesCDF;
+        }
+
+        private Tuple<int, int> ChoosePheromone(List<Tuple<Tuple<int, int>, double>> pheromonesCDF, double generatedChance) {
+            Tuple<int, int> choosenPheromone = pheromonesCDF[pheromonesCDF.Count - 1].Item1;
+            foreach(var pheromone in pheromonesCDF) {
+                if(generatedChance < pheromone.Item2) {
+                    choosenPheromone = pheromone.Item1;
+                    break;
+                }
+            }
+            return choosenPheromone;
+        }
+        private void UpdatePheromones(double solutionsThreshold, double vaporationChance) {
+            if(_random.NextDouble() <= vaporationChance) {
+                VaporizePheromones(ref _firstGraphPheromonesTable, 0.05);
+                VaporizePheromones(ref _secondGraphPheromonesTable, 0.05);
+                VaporizePheromones(ref _jumpPheromonesTable, 0.05);
+            }
+            AddPheromones(solutionsThreshold);
+        }
+        private List<Solution> GetSolutionsForPheromonesUpdate(double solutionsThreshold) {
+            _currentGeneratedSolutions.Sort(delegate(Solution x, Solution y) {
+                return x.SolutionValue.CompareTo(y.SolutionValue);
+            });
+
+            // TODO: Write other function for most optimal solution update
+            _mostOptimalSolution = _currentGeneratedSolutions[0];
+
+            List<Solution> solutionsTakenIntoPheromonesTable = _currentGeneratedSolutions.GetRange(0, (int) Math.Ceiling(_currentGeneratedSolutions.Count * solutionsThreshold));
+            return solutionsTakenIntoPheromonesTable;
+        }
+        private void AddPheromones(double solutionsThreshold) {
+            int i = 1;
+            foreach(var solution in GetSolutionsForPheromonesUpdate(solutionsThreshold)) {
+                FillPheromonesTable(_firstGraph, GetPathsFromOneContext(solution, 0), ref _firstGraphPheromonesTable, i);
+                FillPheromonesTable(_secondGraph, GetPathsFromOneContext(solution, 1), ref _secondGraphPheromonesTable, i);
+                FillJumpPheromonesTable(solution, ref _jumpPheromonesTable, i);
+                i += 1;
+            }
+        }
+        private void VaporizePheromones(ref Dictionary<Tuple<int, int>, Dictionary<Tuple<int, int>, double>> pheromonesTable, double vaporationRate) {
+            foreach(var vertex in pheromonesTable) {
+                List<Tuple<int, int>> pheromoneVertices = new List<Tuple<int, int>>(pheromonesTable[vertex.Key].Keys);
+                foreach(var pheromone in pheromoneVertices) {
+                    pheromonesTable[vertex.Key][pheromone] *= (1.0 - vaporationRate);
+                }
+            }
+        }
+        private void AddPheromonesToGraphTables(Tuple<int, int> source, Tuple<int, int> destination, int weight, ref Dictionary<Tuple<int, int>, Dictionary<Tuple<int, int>, double>> pheromonesTable) {
             pheromonesTable[source][destination] += 1.0 / weight;
         }
         private void AddPheromonesToJumpTable(Tuple<int, int> source, Tuple<int, int> destination, ref Dictionary<Tuple<int, int>, Dictionary<Tuple<int, int>, double>> pheromonesTable, int weightMultiplier) {
-            if(_firstGraph.VertexList.ContainsKey(source)) _jumpPheromonesTable[source][destination] += 1.0 / (Graph.DistanceBetweenVertices(source, destination) * weightMultiplier);
-            else _jumpPheromonesTable[destination][source] += 1.0 / (Graph.DistanceBetweenVertices(destination, source) * weightMultiplier);
+            _jumpPheromonesTable[source][destination] += 1.0 / (Graph.DistanceBetweenVertices(source, destination) * weightMultiplier);
         }
-        private void VaporizePheromones() {
-            
-        }
-        private void SmoothePheromones() {
-
-        } 
         private static Dictionary<Tuple<int, int>, Dictionary<Tuple<int, int>, double>> InitializePheromonesTable(Graph graph) {
             Dictionary<Tuple<int, int>, Dictionary<Tuple<int, int>, double>> pheromonesTable = new Dictionary<Tuple<int, int>, Dictionary<Tuple<int, int>, double>>();
             foreach(var vertex in graph.VertexList) {
@@ -45,6 +245,13 @@ namespace ok_project {
                     pheromonesTable[firstGraphVertex.Key].Add(secondGraphVertex.Key, 0);
                 }
             }
+
+            foreach(var secondGraphVertex in secondGraph.VertexList) {
+                pheromonesTable.Add(secondGraphVertex.Key, new Dictionary<Tuple<int, int>, double>());
+                foreach(var firstGraphVertex in firstGraph.VertexList) {
+                    pheromonesTable[secondGraphVertex.Key].Add(firstGraphVertex.Key, 0);
+                }
+            }
             return pheromonesTable;
         }
         private void FillJumpPheromonesTable(Solution solution, ref Dictionary<Tuple<int, int>, Dictionary<Tuple<int, int>, double>> pheromonesTable, int weightMultiplier) {
@@ -57,7 +264,7 @@ namespace ok_project {
         private void FillPheromonesTable(Graph graph, List<List<Tuple<int, int>>> solutionPathsFromGraph, ref Dictionary<Tuple<int, int>, Dictionary<Tuple<int, int>, double>> pheromonesTable, int weightMultiplier) {
             foreach(var path in solutionPathsFromGraph) {
                 for(int i = 0, j = 1; i < path.Count - 1; i++, j++) {
-                    AddPheromones(path[i], path[j], graph.VertexList[path[i]].EdgeList[path[j]] * weightMultiplier, ref pheromonesTable);
+                    AddPheromonesToGraphTables(path[i], path[j], graph.VertexList[path[i]].EdgeList[path[j]] * weightMultiplier, ref pheromonesTable);
                 }
             }
         }
@@ -71,6 +278,7 @@ namespace ok_project {
         public AntColony(int graphSize, int maxWeight, int solutionsNumber, double solutionsThreshold) {
             _graphGenerator = GraphGenerator.Instance;
             _solutionGenerator = InstanceGenerator.Instance;
+            _random = new Random();
 
             _firstGraph = _graphGenerator.GenerateGraph(graphSize, maxWeight);
             _secondGraph = _graphGenerator.GenerateGraph(graphSize, maxWeight);
@@ -79,19 +287,10 @@ namespace ok_project {
             _secondGraphPheromonesTable = InitializePheromonesTable(_secondGraph);
             _jumpPheromonesTable = InitializePheromonesTable(_firstGraph, _secondGraph);
 
+            // Bug here
             _currentGeneratedSolutions = _solutionGenerator.GenerateRandomSolutions(_firstGraph, _secondGraph, solutionsNumber);
-            _currentGeneratedSolutions.Sort(delegate(Solution x, Solution y) {
-                return x.SolutionValue.CompareTo(y.SolutionValue);
-            });
-
-            List<Solution> solutionsTakenIntoPheromonesTable = _currentGeneratedSolutions.GetRange(0, (int) Math.Ceiling(_currentGeneratedSolutions.Count * solutionsThreshold));
-            int i = 1;
-            foreach(var solution in solutionsTakenIntoPheromonesTable) {
-                FillPheromonesTable(_firstGraph, GetPathsFromOneContext(solution, 0), ref _firstGraphPheromonesTable, i);
-                FillPheromonesTable(_secondGraph, GetPathsFromOneContext(solution, 1), ref _secondGraphPheromonesTable, i);
-                FillJumpPheromonesTable(solution, ref _jumpPheromonesTable, i);
-                i += 1;
-            }
+            _mostOptimalSolution = new Solution(_firstGraph, _secondGraph);
+            AddPheromones(0.5);
         }
     }
 }

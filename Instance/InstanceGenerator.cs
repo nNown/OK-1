@@ -95,7 +95,7 @@ namespace ok_project {
             return generatedPath;
         }
 
-        private Tuple<int, int> PickRandomVertex(List<Tuple<int, int>> vertices) {
+        public Tuple<int, int> PickRandomVertex(List<Tuple<int, int>> vertices) {
             int choosenVertexIndex = _random.Next(0, vertices.Count);
             Tuple<int, int> choosenVertex = vertices[0];
 
@@ -109,7 +109,7 @@ namespace ok_project {
 
             return choosenVertex;
         }
-        private List<Tuple<int, int>> GetUnvisitedVertices(Graph graph) {
+        public List<Tuple<int, int>> GetUnvisitedVertices(Graph graph) {
             List<Tuple<int, int>> unvisitedVertices = new List<Tuple<int, int>>();
             foreach(var vertex in graph.VertexList) {
                 if(!vertex.Value.Visited) {
@@ -118,7 +118,7 @@ namespace ok_project {
             }
             return unvisitedVertices;
         }
-        private bool GetGraphContext(List<Tuple<int, int>> firstGraphVerticesPool, List<Tuple<int, int>> secondGraphVerticesPool, int iteration) {
+        public bool GetGraphContext(List<Tuple<int, int>> firstGraphVerticesPool, List<Tuple<int, int>> secondGraphVerticesPool, int iteration) {
             if(firstGraphVerticesPool.Count > 0) {
                 if(iteration % 2 != 0 && secondGraphVerticesPool.Count > 0) {
                     return false;
@@ -129,14 +129,14 @@ namespace ok_project {
                 return false;
             }
         }
-        private int ComputePathValue(Graph graph, List<Tuple<int, int>> solutionSubpath) {
+        public int ComputePathValue(Graph graph, List<Tuple<int, int>> solutionSubpath) {
             int solutionValue = 0;
             for(int i = 0, j = 1; i < solutionSubpath.Count - 1; i++, j++) {
                 solutionValue += graph.VertexList[solutionSubpath[i]].EdgeList[solutionSubpath[j]];
             }
             return solutionValue;
         }
-        private void MarkVerticesAsUnvisited(ref Graph graph) {
+        public void MarkVerticesAsUnvisited(ref Graph graph) {
             foreach(var vertex in graph.VertexList) {
                 vertex.Value.Visited = false;
             }
