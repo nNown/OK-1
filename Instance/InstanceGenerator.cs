@@ -50,24 +50,7 @@ namespace ok_project {
             while(generatedPath.Count < 10) {
                 generatedPath.Add(choosenVertex);
                 graph.VertexList[choosenVertex].Visited = true;
-
-                // TODO: Find better way to access first element of dictionary
-                Tuple<int, int> currentEdge = new List<Tuple<int, int>>(graph.VertexList[choosenVertex].EdgeList.Keys)[0];
-                foreach(var edge in graph.VertexList[choosenVertex].EdgeList) {
-                    if(!graph.VertexList[edge.Key].Visited) {
-                        currentEdge = edge.Key;
-                        continue;
-                    }
-
-                    if(generatedPath.Contains(edge.Key)) {
-                        continue;
-                    }
-
-                    if(edge.Value < graph.VertexList[choosenVertex].EdgeList[currentEdge]) {
-                        currentEdge = edge.Key;
-                    }
-                }
-
+                Tuple<int, int> currentEdge = PickRandomVertex(new List<Tuple<int, int>>(graph.VertexList[choosenVertex].EdgeList.Keys));
                 choosenVertex = currentEdge;
             }
             return generatedPath;

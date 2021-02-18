@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using System;
-using System.Collections.Generic;
 
 namespace ok_project {
     class Program {
@@ -10,39 +9,44 @@ namespace ok_project {
             host.Services.GetRequiredService<Program>().Run();
         }
         public void Run() {
-            AntColony test = new AntColony(50, 100, 20, 0.5);
-            test.Optimize(100, 20, 0.1);
-            // var instanceGenerator = InstanceGenerator.Instance;
-            // var graphGenerator = GraphGenerator.Instance;
-            // Graph test = graphGenerator.GenerateGraph(50, 100);
-            // List<Tuple<int, int>> vertices = new List<Tuple<int, int>>(test.VertexList.Keys);
-            // List<Tuple<int, int>> path = Graph.PathBetweenVertices(test, vertices[0], vertices[10]);
-            // Console.WriteLine("({0}, {1}) -> ({2}, {3})", vertices[0].Item1, vertices[0].Item2, vertices[10].Item1, vertices[10].Item2);
-            // foreach(var vertex in path) {
-            //     Console.WriteLine("({0}, {1})", vertex.Item1, vertex.Item2);
-            // }
+            int[] graphSizes = { 30, 35, 40, 45, 50, 55, 60 };
+            int[] initialGeneratedSolutions = { 100, 125, 150, 175, 200, 225, 250, 275, 300 };
+            double[] initialSolutionsThreshold = { 0.15, 0.5, 0.85 };
 
-            // Solution test = instanceGenerator.GenerateRandomSolution(graphGenerator.GenerateGraph(50, 100), graphGenerator.GenerateGraph(50, 100));
-                // foreach(var path in test.SolutionPath) {
-                //     foreach(var vertex in path) {
-                //         Console.Write("({0}, {1}), ", vertex.Item1, vertex.Item2);
-                //     }
-                // }
-                // Console.WriteLine("\n");
-                // Console.WriteLine(test.SolutionValue);
-                // Console.WriteLine("\n");
+            int[] iterations = { 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 11000, 12000, 13000, 14000, 15000 };
+            int[] antsNumber = { 10, 20, 30, 40, 50 };
+            Tuple<double, double, int>[] pheromoneUsages = { new Tuple<double, double, int>(0.1, 0.8, 8), new Tuple<double, double, int>(0.05, 0.9, 18), new Tuple<double, double, int>(0.2, 0.6, 3), new Tuple<double, double, int>(0.25, 1, 4), new Tuple<double, double, int>(0.1, 0.5, 5) };
+            double[] chancesToPickVertex = { 0.5, 0.6, 0.7, 0.8 };
+            double[] vaporationRates = { 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5 };
+            double[] vaporationChances = { 0.2, 0.4, 0.6, 0.8, 1 };
+            double[] solutionsTakenIntoPheromonesTables = { 0.25, 0.5, 0.75, 1 };
 
-            // for(int i = 0; i < 100; i++) {
-            //     var Generator = GraphGenerator.Instance;
-            //     Graph test = Generator.GenerateGraph(100, 100);
-            //     Console.WriteLine("Graph {0}", i);
-            //     foreach(var vertex in test.VertexList) {
-            //         Console.Write("Vertex: ({0}, {1}):\n", vertex.Key.Item1, vertex.Key.Item2);
-            //         foreach(var edge in vertex.Value.EdgeList) {
-            //             Console.Write("({0}, {1}), {2}\n", edge.Key.Item1, edge.Key.Item2, edge.Value);
-            //         }
+            // foreach(var size in graphSizes) {
+            //     foreach(var initialSolutions in initialGeneratedSolutions) {
+            //         foreach(var initialThreshold in initialSolutionsThreshold) {
+                        foreach(var iterationUpperBound in iterations) {
+                            foreach(var ants in antsNumber) {
+                                foreach(var pheromoneUsage in pheromoneUsages) {
+                                    foreach(var chanceToPickVertex in chancesToPickVertex) {
+                                        foreach(var vaporationRate in vaporationRates) {
+                                            foreach(var vaporationChance in vaporationChances) {
+                                                foreach(var solutionTakenIntoTable in solutionsTakenIntoPheromonesTables) {
+                                                    try {
+                                                        AntColony colony = new AntColony(50, 100, 150, 0.5);
+                                                        colony.Optimize(iterationUpperBound, ants, pheromoneUsage.Item1, pheromoneUsage.Item2, chanceToPickVertex, vaporationChance, vaporationRate, pheromoneUsage.Item3, solutionTakenIntoTable);
+                                                    } catch {
+                                                        Console.WriteLine("\nError in generating");
+                                                        continue;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+            //         } 
             //     }
-            //     Console.WriteLine();
             // }
         }
         private static IHostBuilder CreateHostBuilder(string[] args) {
