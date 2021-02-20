@@ -11,16 +11,16 @@ namespace ok_project {
         public Graph GenerateGraph(int graphSize, int maxWeight) {
             Graph graph = new Graph();
 
-            graph.AddVertex(new Tuple<int, int>(_random.Next(100, 10000), _random.Next(100, 10000)), 6);
+            graph.AddVertex(new Tuple<int, int>(_random.Next(1, 10000), _random.Next(1, 10000)), 6);
 
             while(graph.VertexList.Count < graphSize) {
                 List<Tuple<int, int>> verticesWithCapacity = GetVerticesWithCapacityForNewEdges(ref graph);
 
                 if(verticesWithCapacity.Count < 1) {
                     int numberOfCandidatesToDeleteEdges = graphSize - graph.VertexList.Count > graph.VertexList.Count ? graph.VertexList.Count : graphSize - graph.VertexList.Count;
-                    CreateSpaceForNewEdges(ref graph, numberOfCandidatesToDeleteEdges, 0.5);
+                    CreateSpaceForNewEdges(ref graph, numberOfCandidatesToDeleteEdges, 0.2);
                 } else {
-                    GenerateVertices(ref graph, verticesWithCapacity, maxWeight);
+                    GenerateVertices(ref graph, verticesWithCapacity, maxWeight, graphSize);
                     PopulateGraphWithEdges(ref graph, maxWeight);
                 }
             }
@@ -43,9 +43,11 @@ namespace ok_project {
                 }
             }
         }
-        private void GenerateVertices(ref Graph graph, List<Tuple<int, int>> verticesWithCapacity, int maxWeightOfEdge) {
+        private void GenerateVertices(ref Graph graph, List<Tuple<int, int>> verticesWithCapacity, int maxWeightOfEdge, int graphSize) {
+
             foreach(var vertex in verticesWithCapacity) {
                 while(graph.VertexList[vertex].EdgeList.Count < graph.VertexList[vertex].Degree) {
+                    if(graph.VertexList.Count >= graphSize) return;
                     Tuple<int, int> generatedVertex = GeneratePointWithinCircle(vertex, maxWeightOfEdge);
                     while(graph.VertexList.ContainsKey(generatedVertex)) {
                         generatedVertex = GeneratePointWithinCircle(vertex, maxWeightOfEdge);
@@ -73,7 +75,7 @@ namespace ok_project {
             int index = 0;
             foreach(var vertex in graph.VertexList) {
                 if(randomIndexes.Contains(index)) {
-                    if(vertex.Value.Degree < 2) continue;
+                    if(vertex.Value.Degree < 1) continue;
 
                     int numberOfEdgesToDelete = vertex.Value.Degree - Math.Floor(vertex.Value.Degree * capacityToLeave) < 2 ? 1 : (int) (vertex.Value.Degree - Math.Floor(vertex.Value.Degree * capacityToLeave));
 

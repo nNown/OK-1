@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
+using System.IO;
 
 namespace ok_project {
     public class Vertex {
@@ -106,6 +108,10 @@ namespace ok_project {
         
         public Graph() {
             _vertexList = new Dictionary<Tuple<int, int>, Vertex>();
+        }
+
+        public Graph(Dictionary<Tuple<int, int>, Vertex> vertices) {
+            _vertexList = vertices;
         }
     }
 }

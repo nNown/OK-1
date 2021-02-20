@@ -54,6 +54,32 @@ namespace ok_project {
                 choosenVertex = currentEdge;
             }
             return generatedPath;
+            // List<Tuple<int, int>> generatedPath = new List<Tuple<int, int>>();
+            // Tuple<int, int> choosenVertex = PickRandomVertex(GetUnvisitedVertices(graph));
+            // while(generatedPath.Count < 10) {
+            //     generatedPath.Add(choosenVertex);
+            //     graph.VertexList[choosenVertex].Visited = true;
+
+            //     // TODO: Find better way to access first element of dictionary
+            //     Tuple<int, int> currentEdge = new List<Tuple<int, int>>(graph.VertexList[choosenVertex].EdgeList.Keys)[0];
+            //     foreach(var edge in graph.VertexList[choosenVertex].EdgeList) {
+            //         if(!graph.VertexList[edge.Key].Visited) {
+            //             currentEdge = edge.Key;
+            //             continue;
+            //         }
+
+            //         if(generatedPath.Contains(edge.Key)) {
+            //             continue;
+            //         }
+
+            //         if(edge.Value < graph.VertexList[choosenVertex].EdgeList[currentEdge]) {
+            //             currentEdge = edge.Key;
+            //         }
+            //     }
+
+            //     choosenVertex = currentEdge;
+            // }
+            // return generatedPath;
         }
         private List<Tuple<int, int>> GeneratePath(ref Graph graph, List<Tuple<int, int>> univisitedVertices) {
             List<Tuple<int, int>> generatedPath = new List<Tuple<int, int>>();
@@ -79,18 +105,7 @@ namespace ok_project {
         }
 
         private Tuple<int, int> PickRandomVertex(List<Tuple<int, int>> vertices) {
-            int choosenVertexIndex = _random.Next(0, vertices.Count);
-            Tuple<int, int> choosenVertex = vertices[0];
-
-            int iteration = 0;
-            foreach(var vertex in vertices) {
-                if(iteration == choosenVertexIndex) {
-                    choosenVertex = vertex;
-                }
-                iteration += 1;
-            }
-
-            return choosenVertex;
+            return vertices[_random.Next(0, vertices.Count)];
         }
         private List<Tuple<int, int>> GetUnvisitedVertices(Graph graph) {
             List<Tuple<int, int>> unvisitedVertices = new List<Tuple<int, int>>();

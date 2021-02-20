@@ -15,7 +15,7 @@ namespace ok_project {
         private Solution _mostOptimalSolution;
         public void Optimize(int iterationsUpperBound, int numberOfAnts, double pheromoneUsageChance, double maxPheromoneUsageChance, double maxChanceToPickVertex, double vaporationChance, double vaporationRate, int pheromonesUsageGrowthNumber, double solutionsTakenIntoPheromonesTable) {
             Console.WriteLine("\tIterations:{0}\n\tAnts:{1}\n\tPheromones:{2}:{3}:{4}:{5}\n\tVaporation:{6}:{7}\n\tSolutions:{8}", iterationsUpperBound, numberOfAnts, pheromoneUsageChance, maxPheromoneUsageChance, maxChanceToPickVertex, pheromonesUsageGrowthNumber, vaporationChance, vaporationRate, solutionsTakenIntoPheromonesTable);
-            List<int> cutoffs = pheromonesGrowthCutoffs(iterationsUpperBound / 2, pheromonesUsageGrowthNumber);
+            List<int> cutoffs = pheromonesGrowthCutoffs(iterationsUpperBound, pheromonesUsageGrowthNumber);
             double pheromoneUsage = pheromoneUsageChance;
             for(int i = 0; i < iterationsUpperBound; i++) {
                 if(cutoffs.Contains(i)) {
@@ -24,7 +24,7 @@ namespace ok_project {
                     }
                 }
 
-                UpdatePheromones(1, vaporationChance, vaporationRate);
+                UpdatePheromones(solutionsTakenIntoPheromonesTable, vaporationChance, vaporationRate);
                 GenerateSolutions(numberOfAnts, pheromoneUsage, maxChanceToPickVertex);
                 SortSolutions();
 
@@ -375,7 +375,7 @@ namespace ok_project {
             _currentGeneratedSolutions = _solutionGenerator.GenerateRandomSolutions(_firstGraph, _secondGraph, solutionsNumber);
             SortSolutions();
             _mostOptimalSolution = _currentGeneratedSolutions[0];
-            AddPheromones(0.5);
+            AddPheromones(solutionsThreshold);
 
             Console.WriteLine("Generated Graph:\n\tSize:{0}:{1}\n\tSolutions:{2}\n\tThreshold:{3}\n\tMost optimal from random solutions generator:{4}\n", _firstGraph.VertexList.Count, _secondGraph.VertexList.Count, solutionsNumber, solutionsThreshold, _mostOptimalSolution.SolutionValue);
         }
