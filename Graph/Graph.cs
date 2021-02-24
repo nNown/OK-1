@@ -38,6 +38,9 @@ namespace ok_project {
             get => _vertexList;
             set => _vertexList = value;
         }
+        public void SaveGraph(string path) {
+            File.WriteAllText(path, JsonConvert.SerializeObject(_vertexList, Formatting.Indented));
+        }
         public static int DistanceBetweenVertices(Tuple<int, int> source, Tuple<int, int> destination) {
             return (int) Math.Ceiling(Math.Sqrt(Math.Pow(source.Item1 - destination.Item1, 2) + Math.Pow(source.Item2 - destination.Item2, 2)));
         }

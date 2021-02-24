@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Collections.Generic;
 
 namespace ok_project {
@@ -13,24 +14,31 @@ namespace ok_project {
         private static InstanceGenerator _solutionGenerator;
         private static Random _random;
         private Solution _mostOptimalSolution;
-        public void Optimize(int iterationsUpperBound, int numberOfAnts, double pheromoneUsageChance, double maxPheromoneUsageChance, double maxChanceToPickVertex, double vaporationChance, double vaporationRate, int pheromonesUsageGrowthNumber, double solutionsTakenIntoPheromonesTable) {
-            Console.WriteLine("\tIterations:{0}\n\tAnts:{1}\n\tPheromones:{2}:{3}:{4}:{5}\n\tVaporation:{6}:{7}\n\tSolutions:{8}", iterationsUpperBound, numberOfAnts, pheromoneUsageChance, maxPheromoneUsageChance, maxChanceToPickVertex, pheromonesUsageGrowthNumber, vaporationChance, vaporationRate, solutionsTakenIntoPheromonesTable);
+        public void Optimize(int iterationsUpperBound, int numberOfAnts, double pheromoneUsageChance, double maxPheromoneUsageChance, double maxChanceToPickVertex, double evaporationChance, double evaporationRate, int pheromonesUsageGrowthNumber, double solutionsTakenIntoPheromonesTable, string name) {
             List<int> cutoffs = pheromonesGrowthCutoffs(iterationsUpperBound, pheromonesUsageGrowthNumber);
             double pheromoneUsage = pheromoneUsageChance;
-            for(int i = 0; i < iterationsUpperBound; i++) {
+            for(int i = 1; i < iterationsUpperBound; i++) {
                 if(cutoffs.Contains(i)) {
                     if(pheromoneUsage < maxPheromoneUsageChance) {
                         pheromoneUsage += pheromoneUsageChance;
                     }
                 }
 
-                UpdatePheromones(solutionsTakenIntoPheromonesTable, vaporationChance, vaporationRate);
+                UpdatePheromones(solutionsTakenIntoPheromonesTable, evaporationChance, evaporationRate);
                 GenerateSolutions(numberOfAnts, pheromoneUsage, maxChanceToPickVertex);
                 SortSolutions();
 
                 if(_currentGeneratedSolutions[0].SolutionValue < _mostOptimalSolution.SolutionValue) {
                     _mostOptimalSolution = _currentGeneratedSolutions[0];
-                    Console.WriteLine("\n\tOptimized solution:{0}\n\tIteration:{1}", _mostOptimalSolution.SolutionValue, i);
+                    Console.WriteLine("{0} {1}", _mostOptimalSolution.SolutionValue, i);
+                }
+            }
+            using(StreamWriter file = new StreamWriter(Path.Join(Directory.GetCurrentDirectory(), @"/Graphs/" + name + "-solution.txt"))) {
+                file.WriteLine("Solution value: {0}", _mostOptimalSolution.SolutionValue);
+                foreach(var subpath in _mostOptimalSolution.SolutionPath) {
+                    foreach(var vertex in subpath) {
+                        file.Write("({0}, {1}), ", vertex.Item1, vertex.Item2);
+                    }
                 }
             }
         }
@@ -265,8 +273,8 @@ namespace ok_project {
             }
             return choosenPheromone;
         }
-        private void UpdatePheromones(double solutionsThreshold, double vaporationChance, double vaporationRate) {
-            if(_random.NextDouble() <= vaporationChance) {
+        private void UpdatePheromones(double solutionsThreshold, double evaporationChance, double evaporationRate) {
+            if(_random.NextDouble() <= evaporationChance) {
                 VaporizePheromones(ref _firstGraphPheromonesTable, 0.05);
                 VaporizePheromones(ref _secondGraphPheromonesTable, 0.05);
                 VaporizePheromones(ref _jumpPheromonesTable, 0.05);
@@ -293,11 +301,11 @@ namespace ok_project {
                 i += 1;
             }
         }
-        private void VaporizePheromones(ref Dictionary<Tuple<int, int>, Dictionary<Tuple<int, int>, double>> pheromonesTable, double vaporationRate) {
+        private void VaporizePheromones(ref Dictionary<Tuple<int, int>, Dictionary<Tuple<int, int>, double>> pheromonesTable, double evaporationRate) {
             foreach(var vertex in pheromonesTable) {
                 List<Tuple<int, int>> pheromoneVertices = new List<Tuple<int, int>>(pheromonesTable[vertex.Key].Keys);
                 foreach(var pheromone in pheromoneVertices) {
-                    pheromonesTable[vertex.Key][pheromone] *= (1.0 - vaporationRate);
+                    pheromonesTable[vertex.Key][pheromone] *= (1.0 - evaporationRate);
                 }
             }
         }
@@ -360,13 +368,16 @@ namespace ok_project {
                 vertex.Value.Visited = false;
             }
         }
-        public AntColony(int graphSize, int maxWeight, int solutionsNumber, double solutionsThreshold) {
+        public AntColony(int graphSize, int maxWeight, int solutionsNumber, double solutionsThreshold, string name) {
             _graphGenerator = GraphGenerator.Instance;
             _solutionGenerator = InstanceGenerator.Instance;
             _random = new Random();
 
             _firstGraph = _graphGenerator.GenerateGraph(graphSize, maxWeight);
             _secondGraph = _graphGenerator.GenerateGraph(graphSize, maxWeight);
+            
+            _firstGraph.SaveGraph(Path.Join(Directory.GetCurrentDirectory(), @"/Graphs/" + name + "1.txt"));
+            _secondGraph.SaveGraph(Path.Join(Directory.GetCurrentDirectory(), @"/Graphs/" + name + "2.txt"));
 
             _firstGraphPheromonesTable = InitializePheromonesTable(_firstGraph);
             _secondGraphPheromonesTable = InitializePheromonesTable(_secondGraph);
@@ -375,9 +386,8 @@ namespace ok_project {
             _currentGeneratedSolutions = _solutionGenerator.GenerateRandomSolutions(_firstGraph, _secondGraph, solutionsNumber);
             SortSolutions();
             _mostOptimalSolution = _currentGeneratedSolutions[0];
+            Console.WriteLine("{0} 0", _mostOptimalSolution.SolutionValue);
             AddPheromones(solutionsThreshold);
-
-            Console.WriteLine("Generated Graph:\n\tSize:{0}:{1}\n\tSolutions:{2}\n\tThreshold:{3}\n\tMost optimal from random solutions generator:{4}\n", _firstGraph.VertexList.Count, _secondGraph.VertexList.Count, solutionsNumber, solutionsThreshold, _mostOptimalSolution.SolutionValue);
         }
     }
 }
